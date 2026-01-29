@@ -1,0 +1,3 @@
+BACKEND_HOST: backend.srinivas.fun
+app_location: /usr/share/nginx/html
+component: frontend
