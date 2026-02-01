@@ -1,7 +1,7 @@
 # we must pass 2 variables through command line
 # 1. component
 # 2. environment
-- name: "configure {{ component  }} server"
+- name: "configure {{ component }} server"
   hosts: all
   become: yes
   vars_files:

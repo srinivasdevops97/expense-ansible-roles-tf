@@ -1,49 +1,104 @@
-- name: disable default nodejs
-  ansible.builtin.command: dnf module disable nodejs -y
+# - name: disable default nodejs
+#   ansible.builtin.command: dnf module disable nodejs -y
 
-- name: enable nodejs 22
-  ansible.builtin.command: dnf module enable nodejs:22 -y
+# - name: enable nodejs 22
+#   ansible.builtin.command: dnf module enable nodejs:22 -y
 
-- name: install nodejs and mysql and mpm
+# - name: install nodejs and mysql and npm
+#   ansible.builtin.package:
+#     name: "{{ item }}"
+#     state: latest
+#   loop:
+#   - nodejs
+#   - mysql-server
+#   - npm
+
+# - name: create expense user 
+#   ansible.builtin.user:
+#     name: expense
+
+# - name: import tasks from common role
+#   tags:
+#   - deployment
+#   ansible.builtin.import_role:
+#     name: common
+#     tasks_from: app-pre-req
+
+# - name: Install mysql2 using Ansible's npm module
+#   tags:
+#   - deployment
+#   community.general.npm:
+#     name: mysql2
+#     path: /app
+
+# - name: copy backend service file # copy module only works for files without variables
+#   ansible.builtin.template:
+#     src: backend.service.j2
+#     dest: /etc/systemd/system/backend.service
+
+# - name: ansible to install pymysql and cryptography
+#   ansible.builtin.pip:
+#     name: 
+#     - PyMySQL
+#     - cryptography
+#     executable: pip3.9
+
+# - name: import mysql data
+#   community.mysql.mysql_db:
+#     login_user: root
+#     login_password: "{{ mysql_root_password }}"
+#     login_host: "{{ login_host }}"
+#     target: /app/schema/backend.sql
+#     name: all
+#     state: import
+
+# - name: daemon reload
+#   tags:
+#   - deployment
+#   ansible.builtin.systemd_service:
+#     daemon_reload: true
+#     state: restarted
+#     name: backend
+#     enabled: true
+
+- name: Enable Node.js 22 module
+  ansible.builtin.dnf_module:
+    name: nodejs
+    state: enabled
+    stream: "22"
+
+- name: Install Node.js, MySQL Server, and dependencies
   ansible.builtin.package:
-    name: "{{ item }}"
-    state: latest
-  loop:
-  - nodejs
-  - mysql
-  - npm
+    name:
+      - nodejs
+      - mysql-server
+      - python3-pip # Ensure pip is there
+    state: present
 
-- name: create expense user 
+- name: Install Python MySQL dependencies
+  ansible.builtin.pip:
+    name: 
+      - PyMySQL
+      - cryptography
+    executable: pip3.9 # Keep this if your OS specifically requires 3.9
+
+- name: Create expense user
   ansible.builtin.user:
     name: expense
 
-- name: import tasks from common role
-  tags:
-  - deployment
-  ansible.builtin.import_role:
-    name: common
-    tasks_from: app-pre-req
-
-- name: Install mysql2 using Ansible's npm module
-  tags:
-  - deployment
+- name: Install mysql2 package via NPM
   community.general.npm:
     name: mysql2
     path: /app
+    state: present
 
-- name: copy backend service file # copy module only works for files without variables
+- name: Deploy backend service configuration
   ansible.builtin.template:
     src: backend.service.j2
     dest: /etc/systemd/system/backend.service
+  notify: Reload and Restart Backend # Use handlers for cleaner restarts
 
-- name: ansible to install pymysql and cryptography
-  ansible.builtin.pip:
-    name: 
-    - PyMySQL
-    - cryptography
-    executable: pip3.9
-
-- name: import mysql data
+- name: Import MySQL schema
   community.mysql.mysql_db:
     login_user: root
     login_password: "{{ mysql_root_password }}"
@@ -51,12 +106,3 @@
     target: /app/schema/backend.sql
     name: all
     state: import
-
-- name: daemon reload
-  tags:
-  - deployment
-  ansible.builtin.systemd_service:
-    daemon_reload: true
-    state: restarted
-    name: backend
-    enabled: true
